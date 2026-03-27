@@ -1,0 +1,9 @@
+{
+  "project-repo-location": "C:\\path\\to\\your\\project-repo",
+  "personal-dir-location": "C:\\path\\to\\your\\personal-notes",
+  "git-user-email": "you@example.com",
+  "git-user-name": "Your Name",
+  "developer-handle": "yourhandle (optional — leave empty if your branches don't include a handle)",
+  "product-text": "The product is a [describe your product here — tech stack, architecture, key frameworks, database]. This context helps the assistant understand what it is working on and make appropriate decisions.",
+  "sanity-text": "(a) [First sanity check question — e.g., Have you used any acronyms or abbreviations with ambiguous, unclear, or unintended meanings?]\n\n(b) [Second question — e.g., Have you used any language that could be triggering for some persons?]\n\n[Add as many lettered questions as you need. These are the self-audit checks run after implementation.]"
+}
