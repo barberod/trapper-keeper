@@ -40,7 +40,13 @@ Each mode is defined by its own markdown frontmatter file. The skill reads the f
      "personal-dir-location": "C:\\path\\to\\your\\personal-notes",
      "git-user-email": "you@example.com",
      "git-user-name": "Your Name",
-     "developer-handle": "yourhandle"
+     "developer-handle": "yourhandle",
+     "defaults": {
+       "codebase": "project",
+       "quiet": false,
+       "mode": "default",
+       "agent-attribution-allowed": false
+     }
    }
    ```
 
@@ -53,30 +59,31 @@ Each mode is defined by its own markdown frontmatter file. The skill reads the f
    | `developer-handle` | Short handle that appears in your branch names (optional) |
    | `product-text` | Description of your product and tech stack |
    | `sanity-text` | Self-audit questions run after commit messages are drafted |
+   | `defaults` | Default values for parameters (see Usage below) |
 
    See `config.example.json` for the full template with all keys.
 
 ## Usage
 
 ```
-/trapper-keeper [codebase] [item-id] [quiet] [mode] [agent-attribution-allowed]
+/trapper-keeper [--codebase:value] [--item-id:value] [--quiet[:bool]] [--mode:value] [--agent-attribution-allowed[:bool]]
 ```
 
-All parameters are optional:
+Parameters use `--name:value` syntax, in any order. Booleans accept `--name`, `--name:true`, or `--name:false`. Omitted parameters fall back to config defaults.
 
-| Param | Effect |
-|-------|--------|
-| `codebase` | Select the repo: `project` (🏢), `personal` (🏠), or an absolute path to a git repo |
-| `item-id` | Skip the item ID prompt (e.g., `pbi20525`) |
-| `quiet` | Allow all edits without per-action confirmations |
-| `mode` | Select commit style: `default`, `granular`, `iambic`, `klingon`, `professional`, `terse`, `verbose` |
-| `agent-attribution-allowed` | `true` to allow Co-Authored-By lines; `false` (default) to strip them |
+| Param | Type | Config Default | Effect |
+|-------|------|----------------|--------|
+| `--codebase` | string | `"project"` | Select repo: `project` (🏢), `personal` (🏠), or absolute path |
+| `--item-id` | string | *(none -- prompted)* | Work item identifier (e.g., `pbi20525`) |
+| `--quiet` | bool | `false` | Allow all edits without confirmations |
+| `--mode` | string | `"default"` | Commit style: `default`, `granular`, `iambic`, `klingon`, `professional`, `terse`, `verbose` |
+| `--agent-attribution-allowed` | bool | `false` | Allow Co-Authored-By lines in commits |
 
 **Examples:**
-- `/trapper-keeper` -- interactive, prompts for everything
-- `/trapper-keeper project pbi20525` -- project repo, item ID pbi20525
-- `/trapper-keeper C:\my-other-repo pbi20525 quiet default` -- arbitrary repo path, fast mode, default style
-- `/trapper-keeper work pbi20525 quiet professional true` -- project repo, professional mode, attribution on
+- `/trapper-keeper` -- prompts for item-id, uses config defaults for the rest
+- `/trapper-keeper --item-id:pbi20525` -- project repo (default), default mode
+- `/trapper-keeper --codebase:personal --item-id:main --mode:terse` -- personal repo, terse mode
+- `/trapper-keeper --item-id:pbi20525 --mode:professional --quiet --agent-attribution-allowed` -- professional mode, quiet, attribution on
 
 When it finishes:
 - Commits have been created locally -- you still need to **push**

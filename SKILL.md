@@ -7,14 +7,22 @@ description: Automate the authoring and posting of git commits and their message
 
 **When to use:** Invoke with `/trapper-keeper` to automatically analyze staged and unstaged changes in a git repository and create well-crafted git commits with descriptive messages in one of several stylistic modes.
 
-**Usage:** `/trapper-keeper [codebase] [item-id] [quiet] [mode] [agent-attribution-allowed]`
+**Usage:** `/trapper-keeper [--codebase:value] [--item-id:value] [--quiet[:bool]] [--mode:value] [--agent-attribution-allowed[:bool]]`
 
-- If `codebase` is passed, it selects the repo to work in (project or personal), skipping the codebase selection prompt.
-- If `item-id` is passed, Step 4 skips the prompt and uses it directly (still validated).
-- If `quiet` is passed, the skill runs in quiet mode (see Step 5e below).
-- If `mode` is passed, it selects the commit style (default, granular, iambic, klingon, professional, terse, or verbose), skipping the mode selection prompt.
-- If `agent-attribution-allowed` is `true`, commit messages may include Co-Authored-By lines for AI agents. When `false` (the default), all agent attribution is stripped from commit messages.
-- All can be combined: `/trapper-keeper 20316 quiet verbose true`
+- Parameters use `--name:value` syntax and may appear in **any order**.
+- Boolean parameters accept `--name:true`, `--name:false`, or bare `--name` (shorthand for `--name:true`).
+- Any parameter not provided on the command line falls back to the value in `config.json` under the `"defaults"` key. If no default exists, the user is prompted.
+- `--item-id` has no config default and will always be prompted if not passed.
+- For `--codebase`, the value after the first colon is the full codebase value (important for Windows paths like `--codebase:C:\my-repo`).
+- Unrecognized parameter names are rejected with an error listing valid names.
+- Bare positional arguments (no `--` prefix) are rejected with a message showing the correct named syntax.
+- Pass `--help` to display a quick reference and exit.
+
+**Examples:**
+- `/trapper-keeper --codebase:project --item-id:pbi20525 --mode:professional --quiet:true`
+- `/trapper-keeper --item-id:pbi20525` — codebase, mode, etc. use config defaults
+- `/trapper-keeper --codebase:personal --item-id:main --mode:terse`
+- `/trapper-keeper` — prompts for item-id; codebase, mode use config defaults
 
 ## Overview
 
@@ -36,8 +44,30 @@ Read `config.json` from this skill's directory. This file defines:
 | `git-user-name` | Developer's git name |
 | `developer-handle` | Short handle used in branch names |
 | `sanity-text` | Lettered self-audit questions run after implementation — injected into the SANITY CHECK phase |
+| `defaults` | Object with default parameter values: `codebase`, `quiet`, `mode`, `agent-attribution-allowed`. Missing boolean keys are treated as `false`; missing string keys trigger a user prompt. |
 
 If `config.json` is missing or unreadable, stop and alert the user.
+
+**Parse and resolve named parameters.** After loading config, parse the invocation arguments using these rules:
+
+1. Split the argument string on spaces.
+2. **Help check.** If any token is `--help`, read `HELP.md` from this skill directory and display its contents to the user. Then **stop** — do not continue with the rest of the skill.
+3. Each token must start with `--`. If any token lacks the `--` prefix, stop and alert the user that this skill uses named parameters, and show the correct syntax.
+4. For each `--` token, split on the **first** colon (`:`) to get the parameter name and value. If there is no colon, the token is a bare boolean flag (value = `true`). Splitting on the first colon is critical for Windows paths (e.g., `--codebase:C:\foo` yields name=`codebase`, value=`C:\foo`).
+5. Validate each parameter name against the allowed set: `codebase`, `item-id`, `quiet`, `mode`, `agent-attribution-allowed`. If unrecognized, stop and alert the user with the list of valid names.
+6. Reject duplicate parameter names.
+7. For boolean parameters (`quiet`, `agent-attribution-allowed`), the value must be `true`, `false`, or absent (bare flag = `true`).
+
+**Resolve each parameter** using this precedence: command-line value > `defaults` from config > prompt user. Store the resolved values for use in subsequent steps.
+
+| Scenario | Resolved value |
+|---|---|
+| `--quiet` (bare) | `true` |
+| `--quiet:true` | `true` |
+| `--quiet:false` | `false` |
+| not passed, config default is `true` | `true` |
+| not passed, config default is `false` | `false` |
+| not passed, no config default | prompt user |
 
 ### Step 2 — Check Requirements
 
@@ -53,8 +83,9 @@ Validate all of the following. If any check fails, notify the user with a clear 
 
 **(e)** `developer-handle` is present. It may be empty — this is allowed, but branch matching in Step 4 will fall back to `item-id` only.
 
-**(f)** All 7 frontmatter files exist in this skill directory and are non-empty:
+**(f)** All of the following files exist in this skill directory and are non-empty:
 
+- `HELP.md`
 - `DEFAULT.md`
 - `GRANULAR.md`
 - `IAMBIC.md`
@@ -63,11 +94,11 @@ Validate all of the following. If any check fails, notify the user with a clear 
 - `TERSE.md`
 - `VERBOSE.md`
 
-### Step 3 — Prompt for Codebase
+### Step 3 — Resolve Codebase
 
 Prepare to work with the current code changes in **one** branch of **one** codebase's git repo.
 
-The codebase is determined by the `codebase` parameter passed to the skill. The codebase can be one of the following values: `project`, `personal`, or an **absolute path** to a directory. When using `project` or `personal`, the codebase can also be specified by its corresponding symbol, by its corresponding ID, or by one of its aliases.
+The codebase is determined by the resolved value of `--codebase` (from the command line, then the config default). If neither provides a value, prompt the user. The codebase can be one of the following values: `project`, `personal`, or an **absolute path** to a directory. When using `project` or `personal`, the codebase can also be specified by its corresponding symbol, by its corresponding ID, or by one of its aliases.
 
 The mapping of codebases, IDs, symbols, locations, and aliases is as follows:
 
@@ -76,11 +107,11 @@ The mapping of codebases, IDs, symbols, locations, and aliases is as follows:
 | A | 🏢 | project | `project-repo-location` | `work`, `product`, `theirs` |
 | Z | 🏠 | personal | `personal-dir-location` | `dev`, `notes`, `mine` |
 
-**Passing a path:** The `codebase` parameter may also be an absolute path to a directory (e.g., `C:\Users\DavidBarbero\.claude\skills\trapper-keeper`). When a path is passed, validate: (1) the path exists, (2) it is accessible, (3) it contains a git repository. If any check fails, stop and alert the user. The resolved path may or may not match `project-repo-location` or `personal-dir-location`; the skill does not check for overlap.
+**Passing a path:** The `--codebase` value may also be an absolute path to a directory (e.g., `--codebase:C:\Users\DavidBarbero\.claude\skills\trapper-keeper`). When a path is passed, validate: (1) the path exists, (2) it is accessible, (3) it contains a git repository. If any check fails, stop and alert the user. The resolved path may or may not match `project-repo-location` or `personal-dir-location`; the skill does not check for overlap.
 
-### Step 4 — Prompt for Item ID
+### Step 4 — Resolve Item ID
 
-If `item-id` was passed as a parameter, use it. Otherwise, ask the user for an `item-id`. Either way, validate:
+If `--item-id` was provided (from the command line), use it. Otherwise, ask the user for an `item-id`. Either way, validate:
 
 - Only letters, numbers, hyphens, and underscores allowed
 - No spaces
@@ -106,7 +137,7 @@ Otherwise, if `developer-handle` is non-empty, search for branches whose name co
 
 If no staged or unstaged changes exist, stop and alert the user.
 
-**(e) Establish quiet mode.** If `quiet` was passed as a parameter, quiet mode is on. Otherwise, ask the user: "Allow all edits for this run?" If they confirm, quiet mode is on. If they decline (or do not respond affirmatively), quiet mode is off.
+**(e) Establish quiet mode.** If `quiet` resolved to `true` (from command line or config default), quiet mode is on. If it resolved to `false`, quiet mode is off. If it was not resolved at all (neither command line nor config default), ask the user: "Allow all edits for this run?" If they confirm, quiet mode is on. If they decline (or do not respond affirmatively), quiet mode is off.
 
 When quiet mode is **on**, the skill proceeds through all phases without pausing for confirmations — it will not ask the user to approve individual edits, file writes, or git operations. When quiet mode is **off**, the skill may pause to confirm significant actions with the user as it normally would.
 
@@ -125,7 +156,7 @@ When quiet mode is **on**, the skill proceeds through all phases without pausing
 
 **(g) Safety check:** Verify that `personal-dir-location` is NOT inside `project-repo-location`. If it is, stop and alert the user.
 
-**(l) Resolve agent-attribution-text.** If `agent-attribution-allowed` is `true`, set `{agent-attribution-text}` to: "Agent attribution is allowed. You may include Co-Authored-By lines in commit messages to credit AI agents that contributed to the changes." Otherwise (default), set it to: "Agent attribution is not allowed. Do not include Co-Authored-By lines or any other agent attribution in commit messages. Strip any existing agent attribution."
+**(l) Resolve agent-attribution-text.** If `--agent-attribution-allowed` resolved to `true` (from command line or config default), set `{agent-attribution-text}` to: "Agent attribution is allowed. You may include Co-Authored-By lines in commit messages to credit AI agents that contributed to the changes." Otherwise (default), set it to: "Agent attribution is not allowed. Do not include Co-Authored-By lines or any other agent attribution in commit messages. Strip any existing agent attribution."
 
 **(h-k) Ensure personal subdirectories exist.** Create the full path if any segment is missing:
 
@@ -143,7 +174,7 @@ When quiet mode is **on**, the skill proceeds through all phases without pausing
 
 Prepare to execute **one** mode of operation.
 
-The mode is determined by the `mode` parameter passed to the skill. The mode can be one of the following values: `default`, `granular`, `iambic`, `klingon`, `professional`, `terse`, or `verbose`. Alternatively, the mode can be specified by its corresponding symbol or by its corresponding ID. 
+The mode is determined by the resolved value of `--mode` (from the command line, then the config default). If neither provides a value, prompt the user to select a mode. The mode can be one of the following values: `default`, `granular`, `iambic`, `klingon`, `professional`, `terse`, or `verbose`. Alternatively, the mode can be specified by its corresponding symbol or by its corresponding ID.
 
 The mapping of modes, IDs, symbols, frontmatter files, and output files is as follows:
 
@@ -157,7 +188,7 @@ The mapping of modes, IDs, symbols, frontmatter files, and output files is as fo
 | T | ✂️ | terse | `TERSE.md` | `commits-terse_{timestamp}.md` |
 | V | 📜 | verbose | `VERBOSE.md` | `commits-verbose_{timestamp}.md` |
 
-If no `mode` parameter was passed, prompt the user to select a mode from the list above (displaying both the mode names and their symbols). If the user input is invalid, explain the valid options and prompt again.
+If the mode was not resolved from any source, prompt the user to select a mode from the list above (displaying both the mode names and their symbols). If the user input is invalid, explain the valid options and prompt again.
 
 Once the mode is determined, execute the corresponding frontmatter file as follows:
 
@@ -188,7 +219,7 @@ All time-bound and run-scoped variables are now unset. A fresh `/trapper-keeper`
 - **One-shot time values.** Time-bound variables are captured once at Step 6 and reused for the entire run. They are not refreshed mid-run.
 - **Isolation.** `personal-dir-location` must never be inside `project-repo-location`. The skill checks this and stops if violated.
 - **Fail-safe.** On any step failure, the skill stops and alerts the user rather than continuing with partial or incorrect work.
-- **Attribution controlled by parameter.** Agent attribution (Co-Authored-By lines) is only included when `agent-attribution-allowed` is explicitly set to `true`. The default is `false` — all agent attribution is stripped.
+- **Attribution controlled by parameter.** Agent attribution (Co-Authored-By lines) is only included when `--agent-attribution-allowed` resolves to `true`. The default is `false` — all agent attribution is stripped.
 - **No push.** The skill creates commits but never pushes them. The user pushes manually.
 - **All changes staged first.** Step 5d moves all unstaged changes to staged before analysis, ensuring nothing is missed.
 - **Commit completeness.** Every staged change must appear in exactly one commit. No changes may be silently dropped.
