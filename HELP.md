@@ -3,18 +3,18 @@
 Analyze changes and create well-crafted git commits in one run.
 
 ```
-/trapper-keeper [--codebase:value] [--item-id:value] [--quiet[:bool]] [--mode:value] [--agent-attribution-allowed[:bool]]
+/trapper-keeper [--codebase:value] [--item-id:value] [--quiet[:false|true|force]] [--mode:value] [--agent-attribution[:bool]]
 ```
 
 | Param | Type | Default | What it does |
 |-------|------|---------|--------------|
 | `--codebase` | string | `"project"` | Repo: `project`, `personal`, path, or alias (`work`, `mine`, etc.) |
 | `--item-id` | string | *(prompted)* | Work item ID (e.g., `pbi20525`) |
-| `--quiet` | bool | `false` | Skip per-action confirmations |
+| `--quiet` | `false` \| `true` \| `force` | `false` | `false`: normal. `true`: skip skill confirmations. `force`: skip all interruptions. |
 | `--mode` | string | `"default"` | Commit style (see modes below) |
-| `--agent-attribution-allowed` | bool | `false` | Allow Co-Authored-By lines |
+| `--agent-attribution` | bool | `false` | Allow Co-Authored-By lines |
 
-Booleans: `--quiet` = true, `--quiet:true` = true, `--quiet:false` = false.
+Booleans: `--quiet` = true, `--quiet:true` = true, `--quiet:false` = false, `--quiet:force` = force (max automation).
 Omitted params use defaults from `config.json` > `"defaults"`.
 
 **Modes:** 👍 default | 🔬 granular | 🎭 iambic | 🖖 klingon | 👔 professional | ✂️ terse | 📜 verbose
