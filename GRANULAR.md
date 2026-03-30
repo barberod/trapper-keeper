@@ -47,4 +47,4 @@ Before finalizing the commits, audit every commit message against the following 
 
 Create the git commits on the current branch. Do _not_ push them.
 
-After committing, produce a markdown summary file listing each commit's SHA (short) and message. Save it to: `{personal-dir-location}\notes\{year}\{month}\{item-id}\commits-granular_{timestamp}.md`
+After committing, produce a markdown summary file listing each commit's SHA (short) and message. Save it to: `{personal-dir-location}\notes\{year}\{month}\{folder-name}\commits-granular_{timestamp}.md`
