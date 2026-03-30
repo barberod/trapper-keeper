@@ -7,10 +7,11 @@ description: Automate the authoring and posting of git commits and their message
 
 **When to use:** Invoke with `/trapper-keeper` to automatically analyze staged and unstaged changes in a git repository and create well-crafted git commits with descriptive messages in one of several stylistic modes.
 
-**Usage:** `/trapper-keeper [--codebase:value] [--item-id:value] [--quiet[:bool]] [--mode:value] [--agent-attribution-allowed[:bool]]`
+**Usage:** `/trapper-keeper [--codebase:value] [--item-id:value] [--quiet[:false|true|force]] [--mode:value] [--agent-attribution[:bool]]`
 
 - Parameters use `--name:value` syntax and may appear in **any order**.
 - Boolean parameters accept `--name:true`, `--name:false`, or bare `--name` (shorthand for `--name:true`).
+- The `--quiet` parameter additionally accepts `--quiet:force` for maximum automation (see Step 5e).
 - Any parameter not provided on the command line falls back to the value in `config.json` under the `"defaults"` key. If no default exists, the user is prompted.
 - `--item-id` has no config default and will always be prompted if not passed.
 - For `--codebase`, the value after the first colon is the full codebase value (important for Windows paths like `--codebase:C:\my-repo`).
@@ -44,7 +45,7 @@ Read `config.json` from this skill's directory. This file defines:
 | `git-user-name` | Developer's git name |
 | `developer-handle` | Short handle used in branch names |
 | `sanity-text` | Lettered self-audit questions run after implementation — injected into the SANITY CHECK phase |
-| `defaults` | Object with default parameter values: `codebase`, `quiet`, `mode`, `agent-attribution-allowed`. Missing boolean keys are treated as `false`; missing string keys trigger a user prompt. |
+| `defaults` | Object with default parameter values: `codebase`, `quiet`, `mode`, `agent-attribution`. Missing boolean keys are treated as `false`; missing string keys trigger a user prompt. |
 
 If `config.json` is missing or unreadable, stop and alert the user.
 
@@ -54,9 +55,9 @@ If `config.json` is missing or unreadable, stop and alert the user.
 2. **Help check.** If any token is `--help`, read `HELP.md` from this skill directory and display its contents to the user. Then **stop** — do not continue with the rest of the skill.
 3. Each token must start with `--`. If any token lacks the `--` prefix, stop and alert the user that this skill uses named parameters, and show the correct syntax.
 4. For each `--` token, split on the **first** colon (`:`) to get the parameter name and value. If there is no colon, the token is a bare boolean flag (value = `true`). Splitting on the first colon is critical for Windows paths (e.g., `--codebase:C:\foo` yields name=`codebase`, value=`C:\foo`).
-5. Validate each parameter name against the allowed set: `codebase`, `item-id`, `quiet`, `mode`, `agent-attribution-allowed`. If unrecognized, stop and alert the user with the list of valid names.
+5. Validate each parameter name against the allowed set: `codebase`, `item-id`, `quiet`, `mode`, `agent-attribution`. If unrecognized, stop and alert the user with the list of valid names.
 6. Reject duplicate parameter names.
-7. For boolean parameters (`quiet`, `agent-attribution-allowed`), the value must be `true`, `false`, or absent (bare flag = `true`).
+7. For boolean parameters (`agent-attribution`), the value must be `true`, `false`, or absent (bare flag = `true`). For `quiet`, the value must be `true`, `false`, `force`, or absent (bare `--quiet` = `true`).
 
 **Resolve each parameter** using this precedence: command-line value > `defaults` from config > prompt user. Store the resolved values for use in subsequent steps.
 
@@ -65,8 +66,10 @@ If `config.json` is missing or unreadable, stop and alert the user.
 | `--quiet` (bare) | `true` |
 | `--quiet:true` | `true` |
 | `--quiet:false` | `false` |
+| `--quiet:force` | `force` |
 | not passed, config default is `true` | `true` |
 | not passed, config default is `false` | `false` |
+| not passed, config default is `"force"` | `force` |
 | not passed, no config default | prompt user |
 
 ### Step 2 — Check Requirements
@@ -137,9 +140,15 @@ Otherwise, if `developer-handle` is non-empty, search for branches whose name co
 
 If no staged or unstaged changes exist, stop and alert the user.
 
-**(e) Establish quiet mode.** If `quiet` resolved to `true` (from command line or config default), quiet mode is on. If it resolved to `false`, quiet mode is off. If it was not resolved at all (neither command line nor config default), ask the user: "Allow all edits for this run?" If they confirm, quiet mode is on. If they decline (or do not respond affirmatively), quiet mode is off.
+**(e) Establish quiet mode.** The `quiet` parameter resolves to one of three levels: `false`, `true`, or `force`. If it was not resolved at all (neither command line nor config default), ask the user: "Allow all edits for this run? (no / yes / force)" If they confirm with "yes", quiet is `true`. If they respond with "force", quiet is `force`. If they decline (or do not respond affirmatively), quiet is `false`.
 
-When quiet mode is **on**, the skill proceeds through all phases without pausing for confirmations — it will not ask the user to approve individual edits, file writes, or git operations. When quiet mode is **off**, the skill may pause to confirm significant actions with the user as it normally would.
+The three levels are:
+
+| Level | Behavior |
+|-------|----------|
+| `false` | **Normal.** The skill may pause to confirm significant actions with the user as it normally would. |
+| `true` | **Quiet.** The skill proceeds without pausing for skill-level confirmations — it will not ask the user to approve individual edits, file writes, or git operations. The runtime environment (e.g., Claude Code's tool-permission prompts) may still interrupt. |
+| `force` | **Force.** The skill proceeds without pausing for **any** reason. Do **NOT** prompt the user for permission to run any command. Execute all bash commands, git commands, file writes, file reads, and any other tool operations without pausing, without asking, and without waiting for approval. The **only** permitted interruption is a genuine, unrecoverable error that prevents correct execution. The user has explicitly pre-authorized every tool call and shell command for the duration of this run by selecting force mode. |
 
 ### Step 6 — Set Time-Bound Variables and Ensure Directories
 
@@ -156,12 +165,18 @@ When quiet mode is **on**, the skill proceeds through all phases without pausing
 
 **(g) Safety check:** Verify that `personal-dir-location` is NOT inside `project-repo-location`. If it is, stop and alert the user.
 
-**(l) Resolve agent-attribution-text.** If `--agent-attribution-allowed` resolved to `true` (from command line or config default), set `{agent-attribution-text}` to: "Agent attribution is allowed. You may include Co-Authored-By lines in commit messages to credit AI agents that contributed to the changes." Otherwise (default), set it to: "Agent attribution is not allowed. Do not include Co-Authored-By lines or any other agent attribution in commit messages. Strip any existing agent attribution."
+**(l) Resolve agent-attribution-text.** If `--agent-attribution` resolved to `true` (from command line or config default), set `{agent-attribution-text}` to: "Agent attribution is allowed. You may include Co-Authored-By lines in commit messages to credit AI agents that contributed to the changes." Otherwise (default), set it to: "Agent attribution is not allowed. Do not include Co-Authored-By lines or any other agent attribution in commit messages. Strip any existing agent attribution."
 
-**(h-k) Ensure personal subdirectories exist.** Create the full path if any segment is missing:
+**(h-k) Ensure personal subdirectories exist.**
+
+First, derive the **folder name** from `{item-id}`. If `{item-id}` starts with `pbi` or `bug` (case-insensitive) AND the remainder after stripping that prefix consists entirely of digits (with the total original string being at least 5 characters), use only the numeric part as the folder name. Otherwise, use `{item-id}` unchanged. Always derive from the **original user-provided** item-id (from the command line or prompt), never from a branch-name segment discovered during Step 5(a). Store the result as `{folder-name}` and use it in the directory path below and in all subsequent output-path references where the subdirectory is needed.
+
+Examples: `pbi20525` → `20525`; `bug12345` → `12345`; `BUG90210` → `90210`; `trapper-keeper` → `trapper-keeper`; `pbitools` → `pbitools` (remainder is not all digits); `bugbear` → `bugbear`; `wsl2` → `wsl2`; `20314` → `20314`.
+
+Create the full path if any segment is missing:
 
 ```
-{personal-dir-location}/notes/{year}/{month}/{item-id}/
+{personal-dir-location}/notes/{year}/{month}/{folder-name}/
 ```
 
 **Special case when `item-id` is `main`:** Do not use `main` as the subdirectory name. Instead, derive the name from the resolved codebase path by taking its final meaningful path segment — skipping trailing segments like `src`, `source`, `app`, or `root` that do not identify the codebase. For example, if the codebase path is `C:\StudentFirstSIS`, the subdirectory name is `StudentFirstSIS`. If the path is `C:\my-project\src`, the subdirectory name is `my-project` (skipping `src`). The resulting path would be:
@@ -202,7 +217,7 @@ Once the mode is determined, execute the corresponding frontmatter file as follo
 
 After the git commits are created, produce a markdown file with the commit messages and their corresponding commit SHAs.
 
-All markdown output files are saved to: `{personal-dir-location}/notes/{year}/{month}/{item-id}/`
+All markdown output files are saved to: `{personal-dir-location}/notes/{year}/{month}/{folder-name}/`
 
 ### Step 8 — Process Complete
 
@@ -219,7 +234,8 @@ All time-bound and run-scoped variables are now unset. A fresh `/trapper-keeper`
 - **One-shot time values.** Time-bound variables are captured once at Step 6 and reused for the entire run. They are not refreshed mid-run.
 - **Isolation.** `personal-dir-location` must never be inside `project-repo-location`. The skill checks this and stops if violated.
 - **Fail-safe.** On any step failure, the skill stops and alerts the user rather than continuing with partial or incorrect work.
-- **Attribution controlled by parameter.** Agent attribution (Co-Authored-By lines) is only included when `--agent-attribution-allowed` resolves to `true`. The default is `false` — all agent attribution is stripped.
+- **Attribution controlled by parameter.** Agent attribution (Co-Authored-By lines) is only included when `--agent-attribution` resolves to `true`. The default is `false` — all agent attribution is stripped.
 - **No push.** The skill creates commits but never pushes them. The user pushes manually.
 - **All changes staged first.** Step 5d moves all unstaged changes to staged before analysis, ensuring nothing is missed.
 - **Commit completeness.** Every staged change must appear in exactly one commit. No changes may be silently dropped.
+- **Force mode means zero interruptions.** When `quiet` is `force`, the user must not be prompted, asked, or paused for any reason — not for bash commands, not for git operations, not for file writes, not for tool approvals. Execute everything autonomously. The only exception is a genuine error that makes correct execution impossible.
