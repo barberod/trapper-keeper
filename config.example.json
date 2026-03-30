@@ -10,6 +10,6 @@
     "codebase": "project",
     "quiet": false,
     "mode": "default",
-    "agent-attribution-allowed": false
+    "agent-attribution": false
   }
 }
