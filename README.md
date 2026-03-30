@@ -45,7 +45,7 @@ Each mode is defined by its own markdown frontmatter file. The skill reads the f
        "codebase": "project",
        "quiet": false,
        "mode": "default",
-       "agent-attribution-allowed": false
+       "agent-attribution": false
      }
    }
    ```
@@ -66,24 +66,24 @@ Each mode is defined by its own markdown frontmatter file. The skill reads the f
 ## Usage
 
 ```
-/trapper-keeper [--codebase:value] [--item-id:value] [--quiet[:bool]] [--mode:value] [--agent-attribution-allowed[:bool]]
+/trapper-keeper [--codebase:value] [--item-id:value] [--quiet[:false|true|force]] [--mode:value] [--agent-attribution[:bool]]
 ```
 
-Parameters use `--name:value` syntax, in any order. Booleans accept `--name`, `--name:true`, or `--name:false`. Omitted parameters fall back to config defaults.
+Parameters use `--name:value` syntax, in any order. Booleans accept `--name`, `--name:true`, or `--name:false`. The `--quiet` parameter also accepts `--quiet:force` for maximum automation. Omitted parameters fall back to config defaults.
 
 | Param | Type | Config Default | Effect |
 |-------|------|----------------|--------|
 | `--codebase` | string | `"project"` | Select repo: `project` (🏢), `personal` (🏠), or absolute path |
 | `--item-id` | string | *(none -- prompted)* | Work item identifier (e.g., `pbi20525`) |
-| `--quiet` | bool | `false` | Allow all edits without confirmations |
+| `--quiet` | `false` \| `true` \| `force` | `false` | `false`: pause for confirmations. `true`: skip skill confirmations. `force`: skip all interruptions including tool approvals. |
 | `--mode` | string | `"default"` | Commit style: `default`, `granular`, `iambic`, `klingon`, `professional`, `terse`, `verbose` |
-| `--agent-attribution-allowed` | bool | `false` | Allow Co-Authored-By lines in commits |
+| `--agent-attribution` | bool | `false` | Allow Co-Authored-By lines in commits |
 
 **Examples:**
 - `/trapper-keeper` -- prompts for item-id, uses config defaults for the rest
 - `/trapper-keeper --item-id:pbi20525` -- project repo (default), default mode
 - `/trapper-keeper --codebase:personal --item-id:main --mode:terse` -- personal repo, terse mode
-- `/trapper-keeper --item-id:pbi20525 --mode:professional --quiet --agent-attribution-allowed` -- professional mode, quiet, attribution on
+- `/trapper-keeper --item-id:pbi20525 --mode:professional --quiet --agent-attribution` -- professional mode, quiet, attribution on
 
 When it finishes:
 - Commits have been created locally -- you still need to **push**
