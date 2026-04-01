@@ -1,0 +1,19 @@
+# Sanity Check Rules
+
+Write your self-audit questions here. Each rule should be a lettered question that the assistant must confidently answer "No" to after drafting commit messages. These are run during the sanity check before finalizing commits.
+
+This file is gitignored because it contains user-specific audit criteria. To get started:
+
+```bash
+cp SANITYCHECK-RULES.md.example SANITYCHECK-RULES.md
+```
+
+Then replace the example rules below with your own.
+
+---
+
+(a) Have you used any acronyms or abbreviations with ambiguous, unclear, or unintended meanings?
+
+(b) Have you used any language that could be triggering for some persons?
+
+(c) Have you used any offensive, inappropriate, or unprofessional language?
