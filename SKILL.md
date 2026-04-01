@@ -242,4 +242,5 @@ All time-bound and run-scoped variables are now unset. A fresh `/trapper-keeper`
 - **No push.** The skill creates commits but never pushes them. The user pushes manually.
 - **All changes staged first.** Step 5d moves all unstaged changes to staged before analysis, ensuring nothing is missed.
 - **Commit completeness.** Every staged change must appear in exactly one commit. No changes may be silently dropped.
+- **Sanity check rules file.** Sanity check rules are stored in `SANITYCHECK-RULES.md` (gitignored, user-specific). This file is required — the skill stops if it is missing. Copy `SANITYCHECK-RULES.md.example` to `SANITYCHECK-RULES.md` and customize the rules.
 - **Force mode means zero interruptions.** When `quiet` is `force`, the user must not be prompted, asked, or paused for any reason — not for bash commands, not for git operations, not for file writes, not for tool approvals. Execute everything autonomously. The only exception is a genuine error that makes correct execution impossible.
