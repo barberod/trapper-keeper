@@ -1,11 +1,10 @@
 {
   "project-repo-location": "C:\\path\\to\\your\\project-repo",
   "personal-dir-location": "C:\\path\\to\\your\\personal-notes",
-  "git-user-email": "you@example.com (or \"_\" to skip email matching)",
-  "git-user-name": "Your Name (or \"_\" to skip name matching)",
+  "user-mail": "you@example.com (or \"_\" to skip email matching)",
+  "user-name": "Your Name (or \"_\" to skip name matching)",
   "handle": "yourhandle (optional — leave empty or set to \"_\" to skip handle filtering)",
   "product-text": "The product is a [describe your product here — tech stack, architecture, key frameworks, database]. This context helps the assistant understand what it is working on and make appropriate decisions.",
-  "sanity-text": "(a) [First sanity check question — e.g., Have you used any acronyms or abbreviations with ambiguous, unclear, or unintended meanings?]\n\n(b) [Second question — e.g., Have you used any language that could be triggering for some persons?]\n\n[Add as many lettered questions as you need. These are the self-audit checks run after implementation.]",
   "defaults": {
     "codebase": "project",
     "quiet": false,
