@@ -38,8 +38,8 @@ Each mode is defined by its own markdown frontmatter file. The skill reads the f
    {
      "project-repo-location": "C:\\path\\to\\your\\project-repo",
      "personal-dir-location": "C:\\path\\to\\your\\personal-notes",
-     "git-user-email": "you@example.com",
-     "git-user-name": "Your Name",
+     "user-mail": "you@example.com",
+     "user-name": "Your Name",
      "handle": "yourhandle",
      "defaults": {
        "codebase": "project",
@@ -54,19 +54,24 @@ Each mode is defined by its own markdown frontmatter file. The skill reads the f
    |-----|-------------|
    | `project-repo-location` | Local path to the repo you work in |
    | `personal-dir-location` | Path for notes/artifacts (must be outside the repo) |
-   | `git-user-email` | Must match `git config user.email` in your repo; set to `"_"` to skip email matching; overridable via `--git-user-email` param |
-   | `git-user-name` | Must match `git config user.name` in your repo; set to `"_"` to skip name matching; overridable via `--git-user-name` param |
+   | `user-mail` | Must match `git config user.email` in your repo; set to `"_"` to skip email matching; overridable via `--user-mail` param |
+   | `user-name` | Must match `git config user.name` in your repo; set to `"_"` to skip name matching; overridable via `--user-name` param |
    | `handle` | Short handle that appears in your branch names (optional); set to `"_"` to skip handle filtering; overridable via `--handle` param |
    | `product-text` | Description of your product and tech stack |
-   | `sanity-text` | Self-audit questions run after commit messages are drafted |
    | `defaults` | Default values for parameters (see Usage below) |
 
    See `config.example.json` for the full template with all keys.
 
+4. Set up sanity check rules:
+   ```bash
+   cp SANITYCHECK-RULES.md.example SANITYCHECK-RULES.md
+   ```
+   Customize the lettered self-audit questions for your commit message standards. This file is **required**.
+
 ## Usage
 
 ```
-/trapper-keeper [--codebase:value] [--item-id:value] [--handle:value] [--quiet[:false|true|force]] [--mode:value] [--agent-attribution[:bool]] [--git-user-email:value] [--git-user-name:value]
+/trapper-keeper [--codebase:value] [--item-id:value] [--handle:value] [--quiet[:false|true|force]] [--mode:value] [--agent-attribution[:bool]] [--user-mail:value] [--user-name:value]
 ```
 
 Parameters use `--name:value` syntax, in any order. Booleans accept `--name`, `--name:true`, or `--name:false`. The `--quiet` parameter also accepts `--quiet:force` for maximum automation. Omitted parameters fall back to config defaults.
@@ -79,10 +84,10 @@ Parameters use `--name:value` syntax, in any order. Booleans accept `--name`, `-
 | `--quiet` | `false` \| `true` \| `force` | `false` | `false`: pause for confirmations. `true`: skip skill confirmations. `force`: skip all interruptions including tool approvals. |
 | `--mode` | string | `"default"` | Commit style: `default`, `granular`, `iambic`, `klingon`, `professional`, `terse`, `verbose` |
 | `--agent-attribution` | bool | `false` | Allow Co-Authored-By lines in commits |
-| `--git-user-email` | string | *(config)* | Override git email check; `_` skips |
-| `--git-user-name` | string | *(config)* | Override git name check; `_` skips |
+| `--user-mail` | string | *(config)* | Override git email check; `_` skips |
+| `--user-name` | string | *(config)* | Override git name check; `_` skips |
 
-**Identity parameters** (`--handle`, `--git-user-email`, `--git-user-name`) fall back to their corresponding top-level config keys, not to `defaults`. They are never prompted for.
+**Identity parameters** (`--handle`, `--user-mail`, `--user-name`) fall back to their corresponding top-level config keys, not to `defaults`. They are never prompted for.
 
 **Examples:**
 - `/trapper-keeper` -- prompts for item-id, uses config defaults for the rest
@@ -96,7 +101,7 @@ When it finishes:
 
 ## How it works
 
-Each mode is defined by a markdown file (`DEFAULT.md`, `GRANULAR.md`, etc.) that contains instructions Claude follows at runtime. `SKILL.md` is the orchestrator that validates config, resolves the branch, sets variables, and delegates to the chosen mode file. There is no compiled code -- the entire skill is structured prompts.
+Each mode is defined by a markdown file (`DEFAULT.md`, `GRANULAR.md`, etc.) that contains instructions Claude follows at runtime. Sanity check rules are stored in `SANITYCHECK-RULES.md` (gitignored, user-specific). `SKILL.md` is the orchestrator that validates config, resolves the branch, sets variables, and delegates to the chosen mode file. There is no compiled code -- the entire skill is structured prompts.
 
 ## License
 
