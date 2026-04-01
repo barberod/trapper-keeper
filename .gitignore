@@ -1,6 +1,9 @@
 # User-specific configuration (contains local paths, email, name)
 config.json
 
+# User-specific sanity check rules
+SANITYCHECK-RULES.md
+
 # OS generated files
 .DS_Store
 Thumbs.db
