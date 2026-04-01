@@ -7,7 +7,7 @@ description: Automate the authoring and posting of git commits and their message
 
 **When to use:** Invoke with `/trapper-keeper` to automatically analyze staged and unstaged changes in a git repository and create well-crafted git commits with descriptive messages in one of several stylistic modes.
 
-**Usage:** `/trapper-keeper [--codebase:value] [--item-id:value] [--handle:value] [--quiet[:false|true|force]] [--mode:value] [--agent-attribution[:bool]] [--git-user-email:value] [--git-user-name:value]`
+**Usage:** `/trapper-keeper [--codebase:value] [--item-id:value] [--handle:value] [--quiet[:false|true|force]] [--mode:value] [--agent-attribution[:bool]] [--user-mail:value] [--user-name:value]`
 
 - Parameters use `--name:value` syntax and may appear in **any order**.
 - Boolean parameters accept `--name:true`, `--name:false`, or bare `--name` (shorthand for `--name:true`).
@@ -41,13 +41,14 @@ Read `config.json` from this skill's directory. This file defines:
 |-----|-------------|
 | `project-repo-location` | Local path to the main codebase repo |
 | `personal-dir-location` | Local path to the developer's personal files (outside the repo) |
-| `git-user-email` | Developer's git email |
-| `git-user-name` | Developer's git name |
+| `user-mail` | Developer's git email |
+| `user-name` | Developer's git name |
 | `handle` | Short handle used in branch names (overridable via `--handle` param; set to `_` to skip handle filtering) |
-| `sanity-text` | Lettered self-audit questions run after implementation — injected into the SANITY CHECK phase |
 | `defaults` | Object with default parameter values: `codebase`, `quiet`, `mode`, `agent-attribution`. Missing boolean keys are treated as `false`; missing string keys trigger a user prompt. |
 
 If `config.json` is missing or unreadable, stop and alert the user.
+
+**Sanity check rules source:** Read `SANITYCHECK-RULES.md` from this skill directory. If it does not exist or is empty, fall back to `SANITYCHECK-RULES.md.example`. If neither file exists or both are empty, stop and alert the user — sanity check rules are required. Set `{sanity-text}` to the full text content of whichever file was found. This value is injected into mode files.
 
 **Parse and resolve named parameters.** After loading config, parse the invocation arguments using these rules:
 
@@ -55,13 +56,13 @@ If `config.json` is missing or unreadable, stop and alert the user.
 2. **Help check.** If any token is `--help`, read `HELP.md` from this skill directory and display its contents to the user. Then **stop** — do not continue with the rest of the skill.
 3. Each token must start with `--`. If any token lacks the `--` prefix, stop and alert the user that this skill uses named parameters, and show the correct syntax.
 4. For each `--` token, split on the **first** colon (`:`) to get the parameter name and value. If there is no colon, the token is a bare boolean flag (value = `true`). Splitting on the first colon is critical for Windows paths (e.g., `--codebase:C:\foo` yields name=`codebase`, value=`C:\foo`).
-5. Validate each parameter name against the allowed set: `codebase`, `item-id`, `handle`, `quiet`, `mode`, `agent-attribution`, `git-user-email`, `git-user-name`. If unrecognized, stop and alert the user with the list of valid names.
+5. Validate each parameter name against the allowed set: `codebase`, `item-id`, `handle`, `quiet`, `mode`, `agent-attribution`, `user-mail`, `user-name`. If unrecognized, stop and alert the user with the list of valid names.
 6. Reject duplicate parameter names.
-7. For boolean parameters (`agent-attribution`), the value must be `true`, `false`, or absent (bare flag = `true`). For `quiet`, the value must be `true`, `false`, `force`, or absent (bare `--quiet` = `true`). For string parameters (`handle`, `git-user-email`, `git-user-name`), any non-empty value is accepted.
+7. For boolean parameters (`agent-attribution`), the value must be `true`, `false`, or absent (bare flag = `true`). For `quiet`, the value must be `true`, `false`, `force`, or absent (bare `--quiet` = `true`). For string parameters (`handle`, `user-mail`, `user-name`), any non-empty value is accepted.
 
 **Resolve each parameter** using this precedence: command-line value > `defaults` from config > prompt user. Store the resolved values for use in subsequent steps.
 
-**Special resolution for identity parameters:** `--handle`, `--git-user-email`, and `--git-user-name` resolve as: command-line value > corresponding top-level config key (`handle`, `git-user-email`, `git-user-name`). These are **not** in the `defaults` object and are **never** prompted for -- if absent from both command line and config, `handle` defaults to empty; `git-user-email` and `git-user-name` remain unset (the Step 2 check will fail unless bypassed with `_`).
+**Special resolution for identity parameters:** `--handle`, `--user-mail`, and `--user-name` resolve as: command-line value > corresponding top-level config key (`handle`, `user-mail`, `user-name`). These are **not** in the `defaults` object and are **never** prompted for -- if absent from both command line and config, `handle` defaults to empty; `user-mail` and `user-name` remain unset (the Step 2 check will fail unless bypassed with `_`).
 
 | Scenario | Resolved value |
 |---|---|
@@ -82,9 +83,9 @@ Validate all of the following. If any check fails, notify the user with a clear 
 
 **(b)** `personal-dir-location` exists and is accessible.
 
-**(c)** If the resolved `git-user-email` is `_`, skip this check entirely. Otherwise, the git user email configured in the repo at `project-repo-location` must match the resolved `git-user-email` value.
+**(c)** If the resolved `user-mail` is `_`, skip this check entirely. Otherwise, the git user email configured in the repo at `project-repo-location` must match the resolved `user-mail` value.
 
-**(d)** If the resolved `git-user-name` is `_`, skip this check entirely. Otherwise, the git user name configured in the repo at `project-repo-location` must match the resolved `git-user-name` value.
+**(d)** If the resolved `user-name` is `_`, skip this check entirely. Otherwise, the git user name configured in the repo at `project-repo-location` must match the resolved `user-name` value.
 
 **(e)** `handle` is resolved (from `--handle` param or config `handle` key). It may be empty -- this is allowed, but branch matching in Step 5 will fall back to `item-id` only. If its value is `_`, branch matching will also use `item-id` only (equivalent to empty for matching, but skips confirmation prompts).
 
@@ -98,6 +99,7 @@ Validate all of the following. If any check fails, notify the user with a clear 
 - `PROFESSIONAL.md`
 - `TERSE.md`
 - `VERBOSE.md`
+- At least one of `SANITYCHECK-RULES.md` or `SANITYCHECK-RULES.md.example`
 
 ### Step 3 — Resolve Codebase
 
