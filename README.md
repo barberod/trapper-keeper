@@ -74,6 +74,8 @@ Each mode is defined by its own markdown frontmatter file. The skill reads the f
 /trapper-keeper [--codebase:value] [--item-id:value] [--handle:value] [--quiet[:false|true|force]] [--mode:value] [--agent-attribution[:bool]] [--user-mail:value] [--user-name:value]
 ```
 
+> **Tip:** Pass `--help` for a quick-reference card with all parameters, defaults, and examples.
+
 Parameters use `--name:value` syntax, in any order. Booleans accept `--name`, `--name:true`, or `--name:false`. The `--quiet` parameter also accepts `--quiet:force` for maximum automation. Omitted parameters fall back to config defaults.
 
 | Param | Type | Config Default | Effect |
