@@ -115,7 +115,7 @@ The mapping of codebases, IDs, symbols, locations, and aliases is as follows:
 | A | 🏢 | project | `project-repo-location` | `work`, `product`, `theirs` |
 | Z | 🏠 | personal | `personal-dir-location` | `dev`, `notes`, `mine` |
 
-**Passing a path:** The `--codebase` value may also be an absolute path to a directory (e.g., `--codebase:C:\Users\DavidBarbero\.claude\skills\trapper-keeper`). When a path is passed, validate: (1) the path exists, (2) it is accessible, (3) it contains a git repository. If any check fails, stop and alert the user. The resolved path may or may not match `project-repo-location` or `personal-dir-location`; the skill does not check for overlap.
+**Passing a path:** The `--codebase` value may also be an absolute path to a directory (e.g., `--codebase:C:\Users\GeorgeBurdell\.claude\skills\trapper-keeper`). When a path is passed, validate: (1) the path exists, (2) it is accessible, (3) it contains a git repository. If any check fails, stop and alert the user. The resolved path may or may not match `project-repo-location` or `personal-dir-location`; the skill does not check for overlap.
 
 ### Step 4 — Resolve Item ID
 
