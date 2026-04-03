@@ -200,7 +200,7 @@ The mapping of modes, IDs, symbols, frontmatter files, and output files is as fo
 
 | ID | Symbol | Mode | Frontmatter File | Output |
 |---|----|-------|------------------|--------|
-| D | 👍 | default | `DEFAULT.md` | `commits-default_{timestamp}.md` |
+| D | 👍 | default | `DEFAULT.md` | `commits_{timestamp}.md` |
 | G | 🔬 | granular | `GRANULAR.md` | `commits-granular_{timestamp}.md` |
 | I | 🎭 | iambic | `IAMBIC.md` | `commits-iambic_{timestamp}.md` |
 | K | 🖖 | klingon | `KLINGON.md` | `commits-klingon_{timestamp}.md` |
