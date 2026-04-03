@@ -44,6 +44,7 @@ Read `config.json` from this skill's directory. This file defines:
 | `user-mail` | Developer's git email |
 | `user-name` | Developer's git name |
 | `handle` | Short handle used in branch names (overridable via `--handle` param; set to `_` to skip handle filtering) |
+| `product-text` | Description of your product (tech stack, architecture, frameworks) — injected into all mode files |
 | `defaults` | Object with default parameter values: `codebase`, `quiet`, `mode`, `agent-attribution`. Missing boolean keys are treated as `false`; missing string keys trigger a user prompt. |
 
 If `config.json` is missing or unreadable, stop and alert the user.
