@@ -53,7 +53,7 @@ If `config.json` is missing or unreadable, stop and alert the user.
 
 **Parse and resolve named parameters.** After loading config, parse the invocation arguments using these rules:
 
-1. Split the argument string on spaces.
+1. Split the argument string on spaces, but respect quoted groups. If a value is wrapped in matching single quotes (`'`), double quotes (`"`), or backticks (`` ` ``), treat everything inside (including spaces) as one token. After splitting, strip the outermost matching quotes from each token (e.g., `'--codebase:C:\my repo'` becomes `--codebase:C:\my repo`; `--codebase:'C:\my repo'` becomes `--codebase:C:\my repo`). Unmatched or mismatched quotes are left as-is.
 2. **Help check.** If any token is `--help`, read `HELP.md` from this skill directory and display its contents to the user. Then **stop** — do not continue with the rest of the skill.
 3. Each token must start with `--`. If any token lacks the `--` prefix, stop and alert the user that this skill uses named parameters, and show the correct syntax.
 4. For each `--` token, split on the **first** colon (`:`) to get the parameter name and value. If there is no colon, the token is a bare boolean flag (value = `true`). Splitting on the first colon is critical for Windows paths (e.g., `--codebase:C:\foo` yields name=`codebase`, value=`C:\foo`).
