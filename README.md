@@ -1,25 +1,34 @@
 # Trapper Keeper
 
-A [Claude Code](https://claude.ai/code) skill that automates git commit authoring. It analyzes staged and unstaged changes in a branch, groups them into logically coherent commits, and creates those commits with well-crafted messages -- all in one invocation. Choose from 7 stylistic modes ranging from terse to verbose, conventional to Klingon.
+A [Claude Code](https://claude.ai/code) skill that automatically analyzes staged and unstaged changes in a git repository and creates well-crafted git commits with descriptive messages. It orchestrates 9 steps — 6 deterministic setup steps, 1 mode execution phase (deterministic scripts + agent inference), 1 completion step, and a completion message.
 
 ## Modes
 
-| | Mode | Grouping | Message Style |
-|---|------|----------|---------------|
-| 👍 | **Default** | Standard | Conventional Commits subject-only (`type(scope): desc`) |
-| 🔬 | **Granular** | Fine-grained | "verb the noun" naming specific methods/classes |
-| 🎭 | **Iambic** | Standard | Iambic pentameter |
-| 🖖 | **Klingon** | Standard | tlhIngan Hol with parenthetical English gloss |
-| 👔 | **Professional** | Standard | Conventional Commits + multi-line body explaining "why" |
-| ✂️ | **Terse** | Aggressive (fewest commits) | 3-8 words, no body |
-| 📜 | **Verbose** | Standard | Subject + detailed body (What/Why/Considered/Side effects) |
+| | Mode | What it does |
+|---|------|-------------|
+| 👍 | **Default** | Conventional Commits format (type(scope): description) |
+| 🔬 | **Granular** | Fine-grained "verb the noun" format |
+| 🎭 | **Iambic** | Iambic pentameter (da-DUM x 5 = 10 syllables) |
+| 🖖 | **Klingon** | tlhIngan Hol with English gloss |
+| 👔 | **Professional** | Conventional Commits + multi-line body explaining "why" |
+| ✂️ | **Terse** | Aggressive grouping, 3-8 word messages only |
+| 📜 | **Verbose** | What/Why/Considered/Side effects format |
 
-Each mode is defined by its own markdown frontmatter file. The skill reads the file, replaces placeholders with runtime values, and follows the instructions to create commits.
+Each mode is defined by its own markdown frontmatter file in the `modes/` directory.
+
+## Architecture
+
+Each step lives in its own numbered subfolder (`01-config/`, `02-check/`, etc.) containing:
+- A **markdown file** (agent instructions: Before/Execute/Validate/Act/After)
+- One or more **`.mjs` scripts** (deterministic logic: validation, data gathering, verification)
+
+A shared `progress.mjs` utility renders an 8-emoji progress bar (`🟩🟩🟩🟣⬛⬛⬛⬛`) that updates before and after each step.
 
 ## Prerequisites
 
 - [Claude Code](https://claude.ai/code) CLI or IDE extension
-- A git repo with a branch checked out that has staged or unstaged changes
+- Node.js (for `.mjs` scripts)
+- A git repo with a branch checked out and uncommitted changes
 
 ## Install
 
@@ -54,19 +63,17 @@ Each mode is defined by its own markdown frontmatter file. The skill reads the f
    |-----|-------------|
    | `project-repo-location` | Local path to the repo you work in |
    | `personal-dir-location` | Path for notes/artifacts (must be outside the repo) |
-   | `user-mail` | Must match `git config user.email` in your repo; set to `"_"` to skip email matching; overridable via `--user-mail` param |
-   | `user-name` | Must match `git config user.name` in your repo; set to `"_"` to skip name matching; overridable via `--user-name` param |
-   | `handle` | Short handle that appears in your branch names (optional); set to `"_"` to skip handle filtering; overridable via `--handle` param |
+   | `user-mail` | Must match `git config user.email` (or `_` to skip; overridable via `--user-mail`) |
+   | `user-name` | Must match `git config user.name` (or `_` to skip; overridable via `--user-name`) |
+   | `handle` | Short handle in your branch names (optional; `_` to skip filtering; overridable via `--handle`) |
    | `product-text` | Description of your product and tech stack |
-   | `defaults` | Default values for parameters (see Usage below) |
-
-   See `config.example.json` for the full template with all keys.
+   | `defaults` | Default values for parameters |
 
 4. Set up sanity check rules:
    ```bash
    cp SANITYCHECK-RULES.md.example SANITYCHECK-RULES.md
    ```
-   Customize the lettered self-audit questions for your commit message standards. This file is **required**.
+   Customize the self-audit questions. This file is **required**.
 
 ## Usage
 
@@ -74,36 +81,75 @@ Each mode is defined by its own markdown frontmatter file. The skill reads the f
 /trapper-keeper [--codebase:value] [--item-id:value] [--handle:value] [--quiet[:false|true|force]] [--mode:value] [--agent-attribution[:bool]] [--user-mail:value] [--user-name:value]
 ```
 
-> **Tip:** Pass `--help` for a quick-reference card with all parameters, defaults, and examples.
-
-Parameters use `--name:value` syntax, in any order. Booleans accept `--name`, `--name:true`, or `--name:false`. The `--quiet` parameter also accepts `--quiet:force` for maximum automation. Omitted parameters fall back to config defaults.
+> **Tip:** Pass `--help` for a quick-reference card.
 
 | Param | Type | Config Default | Effect |
 |-------|------|----------------|--------|
-| `--codebase` | string | `"project"` | Select repo: `project` (🏢), `personal` (🏠), or absolute path |
-| `--item-id` | string | *(none -- prompted)* | Work item identifier (e.g., `pbi20525`) |
-| `--handle` | string | *(config)* | Developer handle for branch matching; `_` skips filtering |
-| `--quiet` | `false` \| `true` \| `force` | `false` | `false`: pause for confirmations. `true`: skip skill confirmations. `force`: skip all interruptions including tool approvals. |
-| `--mode` | string | `"default"` | Commit style: `default`, `granular`, `iambic`, `klingon`, `professional`, `terse`, `verbose` |
-| `--agent-attribution` | bool | `false` | Allow Co-Authored-By lines in commits |
+| `--codebase` | string | `"project"` | `project` (🏢), `personal` (🏠), or absolute path |
+| `--item-id` | string | *(prompted)* | Work item identifier (e.g., `pbi20525`) |
+| `--handle` | string | *(config)* | Branch matching handle; `_` skips filtering |
+| `--quiet` | `false`\|`true`\|`force` | `false` | Automation level |
+| `--mode` | string | `"default"` | Commit style |
+| `--agent-attribution` | bool | `false` | Allow Co-Authored-By lines |
 | `--user-mail` | string | *(config)* | Override git email check; `_` skips |
 | `--user-name` | string | *(config)* | Override git name check; `_` skips |
 
-**Identity parameters** (`--handle`, `--user-mail`, `--user-name`) fall back to their corresponding top-level config keys, not to `defaults`. They are never prompted for.
-
 **Examples:**
-- `/trapper-keeper` -- prompts for item-id, uses config defaults for the rest
-- `/trapper-keeper --item-id:pbi20525` -- project repo (default), default mode
+- `/trapper-keeper` -- prompts for item-id, uses config defaults
+- `/trapper-keeper --item-id:pbi20525` -- project repo, default mode
+- `/trapper-keeper --item-id:pbi20525 --mode:professional --quiet` -- professional mode, quiet
 - `/trapper-keeper --codebase:personal --item-id:main --mode:terse` -- personal repo, terse mode
-- `/trapper-keeper --item-id:pbi20525 --mode:professional --quiet --agent-attribution` -- professional mode, quiet, attribution on
 
 When it finishes:
-- Commits have been created locally -- you still need to **push**
-- A markdown summary of all commits and SHAs is saved to your personal notes directory
+- Commits are created on the branch (you still need to **push**)
+- A markdown summary with SHAs is saved to your personal notes directory
 
-## How it works
+## Directory Structure
 
-Each mode is defined by a markdown file (`DEFAULT.md`, `GRANULAR.md`, etc.) that contains instructions Claude follows at runtime. Sanity check rules are stored in `SANITYCHECK-RULES.md` (gitignored, user-specific). `SKILL.md` is the orchestrator that validates config, resolves the branch, sets variables, and delegates to the chosen mode file. There is no compiled code -- the entire skill is structured prompts.
+```
+trapper-keeper/
+├── SKILL.md                     # Thin orchestrator
+├── progress.mjs                 # Shared progress bar utility
+├── README.md
+├── HELP.md
+├── config.json                  # User config (gitignored)
+├── config.example.json
+├── SANITYCHECK-RULES.md         # User sanity rules (gitignored)
+├── SANITYCHECK-RULES.md.example
+├── .gitignore
+│
+├── modes/                       # Mode payload files
+│   ├── DEFAULT.md
+│   ├── GRANULAR.md
+│   ├── IAMBIC.md
+│   ├── KLINGON.md
+│   ├── PROFESSIONAL.md
+│   ├── TERSE.md
+│   └── VERBOSE.md
+│
+├── 01-config/       CONFIG.md + config.mjs
+├── 02-check/        CHECK.md + check.mjs
+├── 03-codebase/     CODEBASE.md + codebase.mjs
+├── 04-itemid/       ITEMID.md + itemid.mjs
+├── 05-branch/       BRANCH.md + branch.mjs
+├── 06-timesetup/    TIMESETUP.md + timesetup.mjs
+├── 07-mode/         MODE.md + validate-output.mjs
+└── 08-complete/     COMPLETE.md + complete.mjs
+```
+
+## How It Works
+
+**Deterministic scripts** (`.mjs`) handle everything that can be done reliably without inference: config parsing, parameter validation, git operations, branch verification, change staging, file existence checks.
+
+**Agent inference** handles everything that requires judgment: analyzing code changes, grouping related changes, writing commit messages in the selected style, and creating the commits.
+
+Each script outputs a JSON result tuple:
+```json
+{
+  "status": "OK",
+  "message": "Human-readable summary."
+}
+```
 
 ## License
 
