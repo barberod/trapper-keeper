@@ -9,6 +9,7 @@
     "codebase": "project",
     "quiet": false,
     "mode": "default",
-    "agent-attribution": false
+    "agent-attribution": false,
+    "report": true
   }
 }

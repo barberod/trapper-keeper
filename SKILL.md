@@ -7,7 +7,7 @@ description: Automate the authoring and posting of git commits and their message
 
 **When to use:** Invoke with `/trapper-keeper` to automatically analyze staged and unstaged changes in a git repository and create well-crafted git commits with descriptive messages in one of several stylistic modes.
 
-**Usage:** `/trapper-keeper [--codebase:value] [--item-id:value] [--handle:value] [--quiet[:false|true|force]] [--mode:value] [--agent-attribution[:bool]] [--user-mail:value] [--user-name:value]`
+**Usage:** `/trapper-keeper [--codebase:value] [--item-id:value] [--handle:value] [--quiet[:false|true|force]] [--mode:value] [--agent-attribution[:bool]] [--report[:bool]] [--user-mail:value] [--user-name:value]`
 
 - Parameters use `--name:value` syntax and may appear in **any order**.
 - Boolean parameters accept `--name:true`, `--name:false`, or bare `--name` (shorthand for `--name:true`).
@@ -115,9 +115,10 @@ All time-bound and run-scoped variables are now unset. A fresh `/trapper-keeper`
 ## Important Notes
 
 - **One-shot time values.** Time-bound variables are captured once at Step 6 and reused for the entire run. They are not refreshed mid-run.
-- **Isolation.** `personal-dir-location` must never be inside `project-repo-location`. The skill checks this and stops if violated.
+- **Isolation.** When the codebase type is `project`, `personal-dir-location` must not be inside the project repo. For `personal` or `path` codebases, overlap is allowed (notes may live alongside personal code).
 - **Fail-safe.** On any step failure (ERROR), the skill stops and alerts the user rather than continuing with partial or incorrect work.
 - **Attribution controlled by parameter.** Agent attribution (Co-Authored-By lines) is only included when `--agent-attribution` resolves to `true`. The default is `false` — all agent attribution is stripped.
+- **Report controlled by parameter.** The markdown commit summary file is only produced when `--report` resolves to `true` (the default). Pass `--report:false` to skip it — useful when the output directory is inside the codebase and you want a clean repo after committing.
 - **No push.** The skill creates commits but never pushes them. The user pushes manually.
 - **All changes staged first.** Step 5 moves all unstaged changes to staged before analysis, ensuring nothing is missed.
 - **Commit completeness.** Every staged change must appear in exactly one commit. No changes may be silently dropped.

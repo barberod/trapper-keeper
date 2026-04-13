@@ -19,7 +19,7 @@ Step 8: Process Complete
 ## Execute
 
 ```bash
-node {skill-dir}/08-complete/complete.mjs "{output-dir}" "{timestamp}" "{resolved-codebase-path}" "{head-before}"
+node {skill-dir}/08-complete/complete.mjs "{output-dir}" "{timestamp}" "{resolved-codebase-path}" "{head-before}" "{report}"
 ```
 
 Parse the JSON output. The result has:

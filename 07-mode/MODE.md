@@ -34,13 +34,18 @@ Replace all `{placeholders}` with resolved values. Execute the tasks described i
 
 **Every staged change must appear in exactly one commit. No changes may be silently dropped.**
 
-After the git commits are created, produce a markdown file with the commit messages and their corresponding commit SHAs.
+After the git commits are created:
+
+- **If `{report}` is `"true"`:** produce a markdown file with the commit messages and their corresponding commit SHAs.
+- **If `{report}` is `"false"`:** skip the markdown summary file entirely.
 
 **If any problem prevents 100% accurate execution, stop and alert the user.**
 
 ## Validate
 
-After executing the mode, determine the expected output filename:
+**If `{report}` is `"false"`:** skip validation entirely — set status to `"OK"` and continue to Step 8.
+
+**If `{report}` is `"true"`:** determine the expected output filename:
 
 | Mode | Output Filename |
 |------|-----------------|

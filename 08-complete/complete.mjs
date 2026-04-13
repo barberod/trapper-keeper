@@ -7,7 +7,9 @@
  * Verifies the run produced output artifacts and that new commits exist.
  *
  * Usage:
- *   node 08-complete/complete.mjs <output-dir> <timestamp> <resolved-codebase-path> <head-before>
+ *   node 08-complete/complete.mjs <output-dir> <timestamp> <resolved-codebase-path> <head-before> [<report>]
+ *
+ * - <report>: "true" (default) or "false" — when false, missing output files are not an error
  *
  * Outputs JSON:
  * {
@@ -41,6 +43,7 @@ function main() {
   const timestamp = args[1] || "";
   const repoDir = args[2] || "";
   const headBefore = args[3] || "";
+  const report = (args[4] || "true").toLowerCase() !== "false";
 
   const result = {
     status: "OK",
@@ -83,7 +86,7 @@ function main() {
   const matches = entries.filter((f) => pattern.test(f));
   result.outputFiles = matches;
 
-  if (matches.length === 0) {
+  if (matches.length === 0 && report) {
     result.status = "ERROR";
     result.errors.push(
       `No output files matching "commits*_${timestamp}.md" found in "${outputDir}".`
@@ -115,7 +118,10 @@ function main() {
   if (result.errors.length > 0) {
     result.message = result.errors.join(" ");
   } else {
-    result.message = `${result.newCommits} commit(s) created. ${matches.length} output file(s): ${matches.join(", ")}`;
+    const filePart = matches.length > 0
+      ? `${matches.length} output file(s): ${matches.join(", ")}`
+      : (report ? "No output files found." : "Report skipped.");
+    result.message = `${result.newCommits} commit(s) created. ${filePart}`;
   }
 
   process.stdout.write(JSON.stringify(result, null, 2));

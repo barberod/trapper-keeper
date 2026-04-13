@@ -234,10 +234,11 @@ function main() {
     "quiet",
     "mode",
     "agent-attribution",
+    "report",
     "user-mail",
     "user-name",
   ];
-  const BOOLEAN_PARAMS = ["agent-attribution"];
+  const BOOLEAN_PARAMS = ["agent-attribution", "report"];
 
   const parsed = {};
 
@@ -366,7 +367,7 @@ function main() {
   result.params["user-name"] =
     parsed["user-name"] ?? (config["user-name"] || null);
 
-  for (const key of ["quiet", "agent-attribution"]) {
+  for (const key of ["quiet", "agent-attribution", "report"]) {
     if (parsed[key] !== undefined) {
       result.params[key] = parsed[key];
     } else if (defaults[key] !== undefined) {

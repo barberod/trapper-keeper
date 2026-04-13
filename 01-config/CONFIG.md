@@ -74,6 +74,7 @@ Store: `config`, `sanityText` as `{sanity-text}`, all `params` values.
   | V | 📜 | verbose |
 
 - `agent-attribution`: Ask if they want agent attribution in commit messages.
+- `report`: Ask if they want a markdown commit summary file produced after committing.
 
 ## After
 
