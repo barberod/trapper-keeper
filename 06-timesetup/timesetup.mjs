@@ -6,9 +6,10 @@
  * Deterministic script for Step 5 (Set Time-Bound Variables and Ensure Directories).
  *
  * Usage:
- *   node 05-timesetup/timesetup.mjs <personal-dir-location> <resolved-codebase-path> <item-id> <agent-attribution>
+ *   node 05-timesetup/timesetup.mjs <personal-dir-location> <resolved-codebase-path> <item-id> <agent-attribution> <codebase-type>
  *
  * - <agent-attribution>: "true" or "false"
+ * - <codebase-type>: "project" | "personal" | "path"
  *
  * Outputs JSON:
  * {
@@ -99,6 +100,7 @@ function main() {
   const codebasePath = args[1] || "";
   const itemId = args[2] || "";
   const agentAttribution = (args[3] || "false").toLowerCase() === "true";
+  const codebaseType = (args[4] || "project").toLowerCase();
 
   const result = {
     status: "OK",
@@ -131,6 +133,8 @@ function main() {
 
   // -----------------------------------------------------------------------
   // (g) Safety check: personal-dir-location NOT inside resolved-codebase-path
+  //     Exception: when codebase-type is NOT "project", overlap is allowed
+  //     (notes may live in a personal/path codebase, just not the project repo)
   // -----------------------------------------------------------------------
   if (!personalDir || !codebasePath) {
     result.checks.isolation.status = "ERROR";
@@ -138,18 +142,20 @@ function main() {
       "personal-dir-location or resolved-codebase-path is empty.";
     result.status = "ERROR";
     result.errors.push(result.checks.isolation.detail);
-  } else {
+  } else if (codebaseType === "project") {
     const normPersonal = normForContains(personalDir);
     const normCodebase = normForContains(codebasePath);
 
     if (normPersonal.startsWith(normCodebase)) {
       result.checks.isolation.status = "ERROR";
-      result.checks.isolation.detail = `personal-dir-location ("${personalDir}") is inside the codebase ("${codebasePath}"). They must be separate.`;
+      result.checks.isolation.detail = `personal-dir-location ("${personalDir}") is inside the project codebase ("${codebasePath}"). They must be separate.`;
       result.status = "ERROR";
       result.errors.push(result.checks.isolation.detail);
     } else {
       result.checks.isolation.detail = "Directories are properly isolated.";
     }
+  } else {
+    result.checks.isolation.detail = `Isolation check skipped for codebase type "${codebaseType}".`;
   }
 
   // -----------------------------------------------------------------------

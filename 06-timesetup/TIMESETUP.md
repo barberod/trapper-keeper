@@ -19,7 +19,7 @@ Step 6: Set Time-Bound Variables and Ensure Directories
 ## Execute
 
 ```bash
-node {skill-dir}/06-timesetup/timesetup.mjs "{personal-dir-location}" "{resolved-codebase-path}" "{item-id}" "{agent-attribution}"
+node {skill-dir}/06-timesetup/timesetup.mjs "{personal-dir-location}" "{resolved-codebase-path}" "{item-id}" "{agent-attribution}" "{codebase-type}"
 ```
 
 Parse the JSON output.
