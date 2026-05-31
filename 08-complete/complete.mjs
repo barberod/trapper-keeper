@@ -94,8 +94,12 @@ function main() {
   }
 
   // Check for new commits since head-before
-  if (repoDir && headBefore) {
-    const logOutput = git(repoDir, `log --oneline ${headBefore}..HEAD`);
+  if (repoDir) {
+    const isUnborn = !headBefore || headBefore === "null";
+    const logCmd = isUnborn
+      ? "log --oneline HEAD"
+      : `log --oneline ${headBefore}..HEAD`;
+    const logOutput = git(repoDir, logCmd);
     if (logOutput) {
       const commitLines = logOutput.split("\n").filter((l) => l.trim().length > 0);
       result.newCommits = commitLines.length;
