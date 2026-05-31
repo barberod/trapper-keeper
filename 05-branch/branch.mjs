@@ -166,7 +166,10 @@ function main() {
   // -----------------------------------------------------------------------
   // (b) Confirm designated branch is checked out
   // -----------------------------------------------------------------------
-  const currentBranch = git(repoDir, "rev-parse --abbrev-ref HEAD");
+  let currentBranch = git(repoDir, "rev-parse --abbrev-ref HEAD");
+  if (!currentBranch) {
+    currentBranch = git(repoDir, "symbolic-ref --short HEAD");
+  }
   result.checks.checkout.currentBranch = currentBranch;
 
   if (!currentBranch) {
